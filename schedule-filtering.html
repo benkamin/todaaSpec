@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>לוח שידורים — תגיות + חיפוש (רספונסיבי)</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Hebrew",sans-serif;color:#0f172a;background:#ffffff}
+
+    header.site{position:sticky;top:0;z-index:100;background:#ffffff;border-bottom:1px solid #e5e7eb}
+    .container{max-width:1100px;margin:0 auto;padding:0 16px}
+    .masthead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand .logo{width:32px;height:32px;border-radius:8px;background:#06b6d4;display:inline-block}
+    .brand .title{font-weight:800}
+
+    .hero{padding:14px 0 6px}
+    .hero h1{margin:0;font-size:clamp(20px,3.2vw,30px)}
+    .hero p{margin:6px 0 0;color:#475569}
+
+    .searchbar{position:sticky;top:64px;z-index:90;background:#ffffff;border-bottom:1px solid #e5e7eb}
+    .searchbar .inner{display:flex;gap:10px;align-items:center;padding:6px 0;justify-content:flex-end}
+    .search-input{flex:0 0 220px;width:220px;border:1px solid #e5e7eb;border-radius:10px;padding:6px 10px;font-size:14px;background:#fff;opacity:.9;margin:0} .search-input:focus{opacity:1;outline:none;border-color:#cbd5e1}  .search-input:focus{opacity:1;outline:none;border-color:#cbd5e1} 
+
+    .tagsbar{position:sticky;top:112px;z-index:80;background:#ffffff;border-bottom:1px solid #e5e7eb;}
+    .tagsbar .row{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;padding:10px 0}
+    .tag-wrapper{display:flex;align-items:center;gap:4px;scroll-snap-align:start;position:relative}
+    .tag-wrapper.active::after{content:'';position:absolute;bottom:-1px;right:0;left:0;height:3px;background:#38bdf8;border-radius:2px}
+    .tag-pill{appearance:none;border:1px solid #e5e7eb;background:#f8fafc;color:#0f172a;border-radius:999px;padding:8px 12px;font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
+    .tag-pill:hover{background:#eef2ff;border-color:#c7d2fe}
+    .tag-pill.active{background:#e0f2fe;border-color:#7dd3fc}
+    /* חץ/מחבר מתחת לתגית שממנה נפתחו תתי־התגיות */
+    .tag-pill.is-source{position:relative}
+    .tag-pill.is-source::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border-width:6px 6px 0 6px;border-style:solid;border-color:#93c5fd transparent transparent transparent}
+    /* קישור ויזואלי לשורת תתי־התגיות */
+    .subtagsbar.linked{border-top:2px solid #93c5fd;background:#f7fbff}
+    
+    .tag-pill.active::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border-width:6px 6px 0 6px;border-style:solid;border-color:#7dd3fc transparent transparent transparent}
+    .subtagsbar{border-top:2px solid #7dd3fc;background:#f7fbff}
+    /* מחבר ויזואלי בין תגית ראשית לשורת תתי־תגיות */
+    .tag-pill.is-source{position:relative}
+    .tag-pill.is-source::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border-width:6px 6px 0 6px;border-style:solid;border-color:#93c5fd transparent transparent transparent}
+    .subtagsbar.linked{border-top:2px solid #93c5fd;background:#f7fbff}
+    
+    .tagsbar .row{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;padding:10px 0}
+    .tag-wrapper{display:inline-flex;align-items:center;gap:0;scroll-snap-align:start}
+    .tag-pill{appearance:none;border:1px solid #e5e7eb;background:#f8fafc;color:#0f172a;border-radius:999px;padding:8px 12px;font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
+    .tag-pill:hover{background:#eef2ff;border-color:#c7d2fe}
+    .tag-pill.active{background:#e0f2fe;border-color:#7dd3fc}
+    /* הסרת החץ */
+    /* חיצי פתיחה הוסרו לפי בקשתך */
+
+    .subtagsbar{display:none;border-top:1px dashed #e5e7eb;background:#fbfdff}
+    .subtagsbar.active{display:block}
+    .subtagsbar .row{display:flex;gap:6px;flex-wrap:wrap;padding:10px 0}
+    .sub-pill{appearance:none;border:1px solid #e5e7eb;background:#fff;color:#0f172a;border-radius:999px;padding:6px 10px;font-size:13px;cursor:pointer}
+    .sub-pill:hover{background:#f1f5f9}
+    .sub-pill.active{background:#e0f2fe;border-color:#7dd3fc}
+
+    .filters-summary{display:flex;gap:8px;flex-wrap:wrap;padding:10px 0}
+    .chip{background:#f1f5f9;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;font-size:12px;color:#334155}
+    .chip button{all:unset;cursor:pointer;margin-left:6px}
+
+    .content{padding:12px 0 40px}
+    .toolbar{display:flex;align-items:center;justify-content:flex-start;margin:6px 0 14px;gap:10px}
+    .count{font-size:14px;color:#64748b}
+    /* removed sort control */
+
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    /* הוסר ע"מ להשאיר פריט אחד בשורה */
+    /* נשאר פריט אחד בשורה בכל רוחב */
+
+    .card{border:1px solid #e5e7eb;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .card h3{font-size:16px;margin:0}
+    .meta{font-size:13px;color:#475569}
+    .tags{display:flex;flex-wrap:wrap;gap:6px}
+    .tag{font-size:12px;border:1px solid #e5e7eb;background:#f8fafc;border-radius:999px;padding:4px 8px;color:#334155}
+    .no-results{padding:22px;text-align:center;border:1px dashed #e5e7eb;border-radius:12px;color:#64748b}
+
+    @media (max-width:860px){
+      .container{padding:0 12px}
+      .masthead{padding:10px 0}
+      .tag-pill{padding:10px 14px;font-size:15px}
+      .sub-pill{padding:8px 12px;font-size:14px}
+      .filters-summary{padding:8px 0}
+      .toolbar{flex-direction:row;align-items:center}
+      /* sort removed */
+    }
+      .masthead{padding:10px 0}
+      .tag-pill{padding:10px 14px;font-size:15px}
+      .sub-pill{padding:8px 12px;font-size:14px}
+      .filters-summary{padding:8px 0}
+      .toolbar{flex-direction:column;align-items:flex-start}
+      /* removed sort control */
+    }
+    @media (max-width:560px){
+      .hero h1{font-size:22px}
+      .card{padding:10px}
+      .card h3{font-size:15px}
+      .meta{font-size:12px}
+      .tag{font-size:11px}
+    }
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="container masthead">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <span class="title">תודעה בריאה</span>
+      </div>
+      <nav class="nav" aria-label="ניווט ראשי">
+        <a href="#" aria-current="page">לוח שידורים</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container hero">
+    <h1>לוח שידורים</h1>
+    <p>סננו לפי חיפוש חופשי, תגיות ראשיות ותתי־תגיות.</p>
+  </div>
+
+  <!-- Search bar -->
+  <div class="searchbar">
+    <div class="container inner">
+      <label class="sr-only" for="freeSearch">חיפוש חופשי</label>
+      <input id="freeSearch" class="search-input" type="search" placeholder="שם שיעור / מנחה..." />
+    </div>
+  </div>
+
+  <!-- Primary + Sub tags -->
+  <div class="tagsbar">
+    <div class="container">
+      <div class="row" id="primaryRow" role="tablist" aria-label="תגיות ראשיות"></div>
+      <div class="subtagsbar" id="subBar" aria-live="polite">
+        <div class="row" id="subRow"></div>
+      </div>
+      <div class="filters-summary" id="activeFilters"></div>
+    </div>
+  </div>
+
+  <main class="container content" aria-live="polite">
+    <div class="toolbar">
+      <div class="count">תוצאות: <b id="resultCount">0</b></div>
+    </div>
+      </div>
+    <section class="grid" id="cards"></section>
+    <div class="no-results" id="noResults" hidden>לא נמצאו מפגשים. נסו להסיר חלק מהמסננים.</div>
+  </main>
+
+  <template id="cardTpl">
+    <div><article class="card">
+      <h3 class="t"></h3>
+      <div class="meta"></div>
+      <div class="tags"></div>
+    </article></div>
+  </template>
+
+  <script>
+  // === טקסונומיה (ללא "הרצאות חד פעמיות") ===
+  const TAX = {
+    "תנועה": ["יוגה","יוגה רכה","יוגה דינאמית","יוגה תרפיה","יוגה נידרה","צ'יקונג","פלדנקרייז","תנועה אינטואיטיבית"],
+    "מיינדפולנס": ["מדיטציה","מתחילים","מתקדמים","סנגהה / קבוצת תרגול"],
+    "בודהיזם": ["מדיטציה","לימודים בודהיסטיים","פמה צ'ודרון","שש השלמויות"],
+    "אורח חיים בריא": ["תזונה","אכילה נינוחה","פסיכולוגיה של האכילה"],
+    "אומנות": ["מנדלות","רפואת המנדלה","ציור אינטואטיבי","קולנוע / ביטוי יצירתי"],
+    "פסיכולוגיה והתפתחות אישית": [],
+    "שיווק למטפלים": [],
+    "תקשורת מקרבת": ["מתחילים","מתקדמים","קהילה / ותיקים","משפחות","משחקי תפקידים","מעבדה ליחסים"],
+    "קורסים": []
+  };
+
+  // === שיעורים (מהדוגמה שלך) ===
+  const CLASSES = [
+    { title:"שיעור יוגה לבחירה — יוגה רכה או דינאמית", teacher:"תודעה בריאה", days:["ראשון","שני","שלישי","רביעי","חמישי","שישי"], start:"07:00", end:"07:30", cat:"תנועה", sub:["יוגה","יוגה רכה","יוגה דינאמית"] },
+    { title:"תרגול מיינדפולנס", teacher:"אלה טולנאיי", days:["ראשון"], start:"08:30", end:"09:30", cat:"מיינדפולנס", sub:["מדיטציה","מתחילים"] },
+    { title:"מעבדה ליחסים – קהילת תקשורת מקרבת", teacher:"לילך בן דרור", days:["ראשון"], start:"12:00", end:"13:30", cat:"תקשורת מקרבת", sub:["מעבדה ליחסים","קהילה / ותיקים"] },
+    { title:"תרגול מיינדפולנס מתקדמים", teacher:"סיגל בירן אבוחצירה", days:["ראשון"], start:"13:00", end:"14:00", cat:"מיינדפולנס", sub:["מדיטציה","מתקדמים"] },
+    { title:"אורח חיים בריא ותזונה", teacher:"הילה אפללו", days:["ראשון"], start:"16:30", end:"17:30", cat:"אורח חיים בריא", sub:["תזונה"] },
+    { title:"תרגול מיינדפולנס מתקדמים", teacher:"קרן פלפל", days:["ראשון"], start:"18:00", end:"19:00", cat:"מיינדפולנס", sub:["מדיטציה","מתקדמים"] },
+    { title:"סגולת המנדלה", teacher:"רונית הולנדר", days:["ראשון"], start:"19:00", end:"21:00", cat:"אומנות", sub:["מנדלות"] },
+
+    { title:"תרגול יוגה תרפיה — יוגה עדינה מאוד", teacher:"יעל אלנברג", days:["שני"], start:"08:00", end:"08:30", cat:"תנועה", sub:["יוגה","יוגה תרפיה"] },
+    { title:"סנגהה לומדת — קריאה, שיח ותרגול משותף", teacher:"דקל קנטי", days:["שני"], start:"08:30", end:"09:30", cat:"מיינדפולנס", sub:["סנגהה / קבוצת תרגול"] },
+    { title:"אכילה נינוחה", teacher:"נעמה כהן", days:["שני"], start:"18:30", end:"19:30", cat:"אורח חיים בריא", sub:["אכילה נינוחה"] },
+    { title:"שש השלמויות — מועדון פמה צ'ודרון", teacher:"—", days:["שני"], start:"19:30", end:"20:30", cat:"בודהיזם", sub:["פמה צ'ודרון","שש השלמויות"] },
+    { title:"יוגה נידרה", teacher:"אורנה סמלסון רוחם", days:["שני"], start:"19:30", end:"20:00", cat:"תנועה", sub:["יוגה","יוגה נידרה"] },
+    { title:"מיינדפולנס מתקדמים", teacher:"ענבר שבח הבוט", days:["שני"], start:"20:30", end:"21:30", cat:"מיינדפולנס", sub:["מדיטציה","מתקדמים"] },
+
+    { title:"חכמת הגוף ותנועה אינטואיטיבית", teacher:"בן קמינסקי", days:["שלישי"], start:"09:30", end:"10:30", cat:"תנועה", sub:["תנועה אינטואיטיבית"] },
+    { title:"רפואת המנדלה — מתקדמים", teacher:"רונית הולנדר", days:["שלישי"], start:"12:15", end:"14:00", cat:"אומנות", sub:["רפואת המנדלה","מנדלות"], level:"מתקדמים" },
+    { title:"מה הסרט שלך?", teacher:"ג'יוואן ארי בוסתן", days:["שלישי"], start:"20:00", end:"21:30", cat:"אומנות", sub:["קולנוע / ביטוי יצירתי"] },
+
+    { title:"צ'י קונג להנעת האנרגיה", teacher:"רונית מלכין", days:["רביעי"], start:"08:00", end:"08:30", cat:"תנועה", sub:["צ'יקונג"] },
+    { title:"סנגהה לומדת — קריאה, שיח ותרגול משותף", teacher:"דקל קנטי", days:["רביעי"], start:"08:30", end:"09:30", cat:"מיינדפולנס", sub:["סנגהה / קבוצת תרגול"] },
+    { title:"תרגול מיינדפולנס", teacher:"ניב אידלמן", days:["רביעי"], start:"09:00", end:"10:00", cat:"מיינדפולנס", sub:["מדיטציה","מתחילים"] },
+    { title:"אומנות מודעת — לצייר את הרגע", teacher:"דורית טייכמן", days:["רביעי"], start:"11:30", end:"13:00", cat:"אומנות", sub:["ציור אינטואיטיבי"] },
+    { title:"הפסיכולוגיה של האכילה", teacher:"הילה אפללו", days:["רביעי"], start:"20:00", end:"21:30", cat:"אורח חיים בריא", sub:["פסיכולוגיה של האכילה"] },
+    { title:"מפגש קהילת תקשורת מקרבת", teacher:"שאנייה כהן בן חיים", days:["רביעי"], start:"20:00", end:"22:00", cat:"תקשורת מקרבת", sub:["קהילה / ותיקים"] },
+
+    { title:"תרגול יוגה תרפיה — יוגה עדינה מאוד", teacher:"קרן בן אור אלוף", days:["חמישי"], start:"08:00", end:"08:30", cat:"תנועה", sub:["יוגה","יוגה תרפיה"] },
+    { title:"קבוצת תרגול לקורס מיינדפולנס", teacher:"רון אלון", days:["חמישי"], start:"09:00", end:"10:00", cat:"מיינדפולנס", sub:["סנגהה / קבוצת תרגול","מתקדמים"] },
+    { title:"מרחב משפחתי — קהילת תקשורת מקרבת", teacher:"שגית רוסו יצחקי", days:["חמישי"], start:"10:00", end:"11:30", cat:"תקשורת מקרבת", sub:["משפחות","קהילה / ותיקים"] },
+    { title:"צ'י קונג", teacher:"אריאל מירוז", days:["חמישי"], start:"11:00", end:"12:15", cat:"תנועה", sub:["צ'יקונג"] },
+    { title:"משחקי תפקידים במצבים מאתגרים — לוותיקי קהילת תקשורת מקרבת", teacher:"שרון כרמל", days:["חמישי"], start:"12:00", end:"13:30", cat:"תקשורת מקרבת", sub:["משחקי תפקידים","מתקדמים","קהילה / ותיקים"] },
+    { title:"מבוא לדרך המצפן", teacher:"ארנינה קשתן", days:["חמישי"], start:"18:00", end:"20:00", cat:"תקשורת מקרבת", sub:["מתחילים"] },
+
+    { title:"יוגה רכה", teacher:"ענת מיכאליס", days:["שישי"], start:"08:00", end:"08:30", cat:"תנועה", sub:["יוגה","יוגה רכה"] },
+    { title:"סנגהה לומדת — קריאה, שיח ותרגול משותף", teacher:"מיכל גור", days:["שבת"], start:"11:30", end:"12:30", cat:"מיינדפולנס", sub:["סנגהה / קבוצת תרגול"] },
+    { title:"שש השלמויות — מועדון פמה צ'ודרון", teacher:"—", days:["שבת"], start:"20:30", end:"22:00", cat:"בודהיזם", sub:["פמה צ'ודרון","שש השלמויות"] }
+  ];
+
+  // === מצב ואלמנטים ===
+  const state = { cat:null, sub:new Set(), q:'' };
+  const el = {
+    tagsbar: document.querySelector('.tagsbar'),
+    primary: document.getElementById('primaryRow'),
+    subBar: document.getElementById('subBar'),
+    subRow: document.getElementById('subRow'),
+    active: document.getElementById('activeFilters'),
+    cards: document.getElementById('cards'),
+    count: document.getElementById('resultCount'),
+    noRes: document.getElementById('noResults'),
+    search: document.getElementById('freeSearch')
+  };
+
+  // === בניית תגיות ראשיות (ריחוף זמני, לחיצה נועלת) ===
+  function buildPrimary(){
+    Object.keys(TAX).forEach(cat => {
+      const wrap=document.createElement('div'); wrap.className='tag-wrapper';
+      const b=document.createElement('button'); b.className='tag-pill'; b.type='button'; b.textContent=cat;
+      b.addEventListener('click', ()=>{
+        const prev = state.cat; state.cat = (state.cat===cat? null: cat);
+        if(state.cat !== prev) state.sub.clear();
+        // עדכון active/is-source על כל התגיות
+        document.querySelectorAll('.tag-pill').forEach(p=>{
+          const on = (p.textContent===state.cat);
+          p.classList.toggle('active', on);
+          p.classList.toggle('is-source', on);
+        });
+        if(state.cat){ showSubtags(state.cat, /*link*/true); }
+        else { hideSubtags(); }
+        renderActive(); render();
+      });
+      b.addEventListener('mouseenter', ()=>{
+        if(!state.cat){
+          // סימון התגית שמעליה מרחפים כמקור
+          document.querySelectorAll('.tag-pill').forEach(p=>p.classList.remove('is-source'));
+          b.classList.add('is-source');
+          showSubtags(cat, /*link*/true);
+        }
+      });
+      wrap.appendChild(b);
+      el.primary.appendChild(wrap);
+    });
+    // הסתרה רק כשעוזבים את כל אזור הסרגל
+    el.tagsbar.addEventListener('mouseleave', ()=>{ if(!state.cat){ hideSubtags(); } });
+  }
+
+  // === תתי־תגיות ===
+  function showSubtags(cat){
+    el.subRow.innerHTML=''; const list=TAX[cat]||[];
+    if(!list.length){ hideSubtags(); return; }
+    list.forEach(st=>{
+      const s=document.createElement('button'); s.className='sub-pill'; s.type='button'; s.textContent=st; s.dataset.value=st;
+      s.addEventListener('click', ()=>{ state.sub.has(st)? state.sub.delete(st): state.sub.add(st); s.classList.toggle('active', state.sub.has(st)); renderActive(); render(); });
+      s.classList.toggle('active', state.sub.has(st)); el.subRow.appendChild(s);
+    });
+    el.subBar.classList.add('active');
+    el.subBar.classList.add('linked');
+  }
+  function hideSubtags(){ el.subBar.classList.remove('active'); el.subBar.classList.remove('linked'); el.subRow.innerHTML=''; if(!state.cat){ document.querySelectorAll('.tag-pill').forEach(p=>p.classList.remove('is-source')); } }
+
+  // === כרטיסים ===
+  function buildCards(){
+    const tpl=document.getElementById('cardTpl');
+    CLASSES.forEach(c=>{
+      const node=tpl.content.cloneNode(true);
+      node.querySelector('.t').textContent=c.title;
+      node.querySelector('.meta').textContent=`${c.teacher} • ${c.days.join(', ')} • ${c.start}–${c.end}`;
+      const tags=node.querySelector('.tags');
+      [c.cat, ...c.sub].forEach(t=>{ const sp=document.createElement('span'); sp.className='tag'; sp.textContent=t; tags.appendChild(sp); });
+      const art=node.querySelector('article');
+      art.dataset.cat=c.cat; art.dataset.sub=JSON.stringify(c.sub); art.dataset.title=c.title; art.dataset.teacher=c.teacher||''; art.dataset.start=c.start; art.dataset.dayFirst=c.days[0];
+      el.cards.appendChild(node);
+    });
+  }
+
+  // === סינון בסיסי + חיפוש ===
+  const DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  function tmin(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+  function matches(art){
+    if(state.cat && art.dataset.cat!==state.cat) return false;
+    if(state.sub.size){ const arr=JSON.parse(art.dataset.sub||'[]'); if(!arr.some(x=>state.sub.has(x))) return false; }
+    if(state.q){ const hay=(art.dataset.title+' '+(art.dataset.teacher||'')).toLowerCase(); if(!hay.includes(state.q)) return false; }
+    return true;
+  }
+  function sortNodes(nodes){ return [...nodes]; }
+
+  function render(){
+    const arts=[...el.cards.querySelectorAll('article')];
+    const visible=arts.filter(matches);
+    el.count.textContent=visible.length;
+    el.noRes.hidden=visible.length>0;
+    arts.forEach(a=> a.parentElement.style.display = visible.includes(a)? '':'none');
+    const frag=document.createDocumentFragment(); sortNodes(visible).forEach(n=>frag.appendChild(n.parentElement)); el.cards.appendChild(frag);
+  }
+
+  function renderActive(){
+    el.active.innerHTML='';
+    if(state.q){ addChip('חיפוש: '+state.q, ()=>{ state.q=''; el.search.value=''; renderActive(); render(); }); }
+    if(state.cat){ addChip('קטגוריה: '+state.cat, ()=>{ state.cat=null; state.sub.clear(); hideSubtags(); document.querySelectorAll('.tag-pill').forEach(p=>p.classList.remove('active')); renderActive(); render(); }); }
+    state.sub.forEach(v=> addChip(v, ()=>{ state.sub.delete(v); document.querySelectorAll('.sub-pill').forEach(s=>{ if(s.dataset.value===v) s.classList.remove('active');}); renderActive(); render(); }));
+  }
+  function addChip(text,onRemove){ const c=document.createElement('span'); c.className='chip'; const x=document.createElement('button'); x.title='הסר'; x.textContent='×'; x.addEventListener('click', onRemove); c.append(x, document.createTextNode(' '+text)); el.active.appendChild(c); }
+
+  // אירועים
+  el.search.addEventListener('input', e=>{ state.q=(e.target.value||'').trim().toLowerCase(); renderActive(); render(); });
+
+  // Init — חזרה למודל הקודם (IIFE)
+  (function(){
+    buildPrimary();
+    buildCards();
+    render();
+  })();
+</script>
+</body>
+</html>
